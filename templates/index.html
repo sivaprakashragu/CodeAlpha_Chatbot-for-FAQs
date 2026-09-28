@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQ Chatbot</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <h2>💬 FAQ Chatbot</h2>
+      <p>Ask me anything about our platform</p>
+    </div>
+
+    <div class="chat-box" id="chat-box">
+      <div class="message bot-message">
+        Hi! I'm your FAQ assistant. Ask me a question and I'll try to help.
+      </div>
+    </div>
+
+    <div class="chat-input">
+      <input type="text" id="user-input" placeholder="Type your question..." autocomplete="off">
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const chatBox = document.getElementById('chat-box');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    function appendMessage(text, sender) {
+      const msg = document.createElement('div');
+      msg.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
+      msg.textContent = text;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const question = userInput.value.trim();
+      if (!question) return;
+
+      appendMessage(question, 'user');
+      userInput.value = '';
+      appendMessage('Typing...', 'bot');
+
+      try {
+        const res = await fetch('/get_response', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: question })
+        });
+        const data = await res.json();
+
+        chatBox.removeChild(chatBox.lastChild); // remove "Typing..."
+        appendMessage(data.answer, 'bot');
+      } catch (err) {
+        chatBox.removeChild(chatBox.lastChild);
+        appendMessage('Something went wrong. Please try again.', 'bot');
+      }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    userInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
+</body>
+</html>
